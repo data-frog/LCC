@@ -1,0 +1,9 @@
+insert into data select * from youku where youku.wurl not in (select wurl from data);
+insert into data select * from sohu where sohu.wurl not in (select wurl from data);
+insert into data select * from ifeng where ifeng.wurl not in (select wurl from data);
+insert into data select * from netease where netease.wurl not in (select wurl from data);
+insert into data select * from pptv where pptv.wurl not in (select wurl from data);
+insert into data select * from sina where sina.wurl not in (select wurl from data);
+insert into data select * from webqqlive where webqqlive.wurl not in (select wurl from data);
+insert into data select * from `56` where `56`.wurl not in (select wurl from data);
+insert into data select * from cntv where cntv.wurl not in (select wurl from data);

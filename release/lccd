@@ -1,0 +1,119 @@
+#!/bin/sh
+#
+# chkconfig: - 91 35
+# description: Starts and stops the lcc daemons 
+#
+# pidfile:	/data/run/xFenguang/lcc.pid
+# config:   /usr/local/xFenguang/etc/lcc.conf
+#
+
+# Source function library.
+if [ -f /etc/init.d/functions ] ; then
+  . /etc/init.d/functions
+elif [ -f /etc/rc.d/init.d/functions ] ; then
+  . /etc/rc.d/init.d/functions
+else
+  exit 1
+fi
+
+# Avoid using root's TMPDIR
+unset TMPDIR
+
+# Check that smb.conf exists.
+if [ ! -f /usr/local/xFenguang/etc/lcc.conf ] ; then
+ echo "The /usr/local/xFenguang/etc/lcc.conf isn't exist" 
+ exit 6
+fi
+
+if [ ! -f /usr/local/xFenguang/sbin/lcc ] ; then
+  echo "The /usr/local/xFenguang/etc/lcc.conf isn't exist"
+  exit 6
+fi
+
+if [ ! -f /usr/local/xFenguang/bin/clean_afileinfo.sql ] ; then
+ echo "The /usr/local/xFenguang/bin/clean_afileinfo.sql isn't exit."
+ exit 6
+fi
+
+RETVAL=0
+
+start() {
+	RETURN=`ps aux | grep lcc | grep -v grep | grep -v "$0"`
+    if [ -n "$RETURN" ] ; then
+		echo "lcc is running."
+		exit 0
+	fi
+	echo $"Starting lcc ... "
+	/usr/local/xFenguang/sbin/lcc -d
+	ps aux | grep lcc | grep -v "grep" | grep -v "$0"
+}
+
+stop() {
+	RETURN=`ps aux | grep lcc | grep -v grep | grep -v $0`
+    if [ -n "$RETURN" ] ; then
+		killall -9 lcc
+		echo "Stoped lcc."
+	else
+		echo "lcc no run."
+    fi
+}
+
+restart() {
+	stop
+	start
+}	
+
+reload() {
+	stop
+	echo "Clean Afile info ..."
+	mysql -ucache_user -pcache_user_10050 < /usr/local/xFenguang/bin/clean_afileinfo.sql
+	echo "Rm /data/log/xFenguang/lcc/Afile/"
+	rm /data/log/xFenguang/lcc/Afile/ -rf 
+	echo "Rm /data/log/xFenguang/lcc/Bfile/"
+	rm /data/log/xFenguang/lcc/Bfile/ -rf 
+	echo "Rm /var/log/xFenguang/host_dump/*"
+	rm /usr/local/xFenguang/tmp/host_dump/ -rf 
+	start
+    echo $"Reloading lcc. Please delete all refelect file. "
+}
+
+version() {
+	/usr/local/xFenguang/sbin/lcc -v
+}	
+
+status() {
+ echo "------------Afile Info-------------"
+ ls /data/log/xFenguang/lcc/Afile/
+ echo -e "\n\n------------Bfile Info-------------"
+ ls -lh /data/log/xFenguang/lcc/Bfile/
+ echo -e "\n\n------------Hostdump Info-------------"
+ ls -lh /usr/local/xFenguang/tmp/host_dump/
+ echo -e "\n\n------------Hostdump Info-------------"
+ ps aux | grep lcc | grep -v "grep" | grep -v "$0"
+}
+
+case "$1" in
+  start)
+  	start
+	;;
+  stop)
+  	stop
+	;;
+  restart)
+  	restart
+	;;
+  reload)
+  	reload
+	;;
+  status)
+  	status
+	;;
+  version)
+  	version
+	;;
+  *)
+	echo $"Usage: $0 {start|stop|restart|reload|version}"
+	exit 2
+esac
+
+exit $?
